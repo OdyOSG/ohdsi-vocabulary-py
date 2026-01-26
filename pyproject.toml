@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ohdsi-vocabulary"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python library for resolving OHDSI concept set expressions and retrieving included concepts and source codes from OMOP CDM vocabulary tables"
 readme = "README.md"
 requires-python = ">=3.8"

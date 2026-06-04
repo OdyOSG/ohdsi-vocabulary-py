@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ohdsi-vocabulary"
-version = "0.1.1"
+version = "0.1.2"
 description = "A Python library for resolving OHDSI concept set expressions and retrieving included concepts and source codes from OMOP CDM vocabulary tables"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -28,8 +28,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "sqlalchemy>=2.0.0",
     "pydantic>=2.0.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.11",
 ]
 
 [project.optional-dependencies]

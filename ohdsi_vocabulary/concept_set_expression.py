@@ -2,23 +2,41 @@
 ConceptSetExpression model for concept set definitions.
 """
 
-from typing import List, Optional
-from pydantic import BaseModel, Field
 import json
+from typing import Any, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .concept import Concept
+
+
+def _one_based_item_error_locations(error: ValidationError) -> ValidationError:
+    """Return a validation error with item indexes shifted for display."""
+    errors = []
+    for item in error.errors():
+        loc = item.get("loc")
+        if isinstance(loc, tuple):
+            loc = tuple(
+                part + 1
+                if isinstance(part, int) and index > 0 and loc[index - 1] == "items"
+                else part
+                for index, part in enumerate(loc)
+            )
+            item = {**item, "loc": loc}
+        errors.append(item)
+
+    return ValidationError.from_exception_data(error.title, errors)
 
 
 class ConceptSetItem(BaseModel):
     """Represents an item in a concept set expression."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     concept: Concept
     is_excluded: bool = Field(False, alias="isExcluded")
     include_descendants: bool = Field(False, alias="includeDescendants")
     include_mapped: bool = Field(False, alias="includeMapped")
-
-    class Config:
-        populate_by_name = True
     
     def __eq__(self, other):
         """Check equality."""
@@ -46,7 +64,15 @@ class ConceptSetItem(BaseModel):
 class ConceptSetExpression(BaseModel):
     """Represents a concept set expression."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     items: List[ConceptSetItem] = Field(default_factory=list)
+
+    def __init__(self, **data: Any):
+        try:
+            super().__init__(**data)
+        except ValidationError as error:
+            raise _one_based_item_error_locations(error) from None
 
     @classmethod
     def from_json(cls, json_str: str) -> "ConceptSetExpression":
@@ -54,9 +80,6 @@ class ConceptSetExpression(BaseModel):
         data = json.loads(json_str)
         return cls(**data)
 
-    class Config:
-        populate_by_name = True
-    
     def __eq__(self, other):
         """Check equality."""
         if not isinstance(other, ConceptSetExpression):

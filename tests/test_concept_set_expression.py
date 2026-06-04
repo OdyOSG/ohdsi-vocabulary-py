@@ -1,6 +1,7 @@
 """Tests for ConceptSetExpression and ConceptSetItem models."""
 
 import pytest
+from pydantic import ValidationError
 from ohdsi_vocabulary import Concept, ConceptSetExpression, ConceptSetItem
 
 
@@ -95,6 +96,59 @@ class TestConceptSetExpression:
         assert len(expression.items) == 1
         assert expression.items[0].concept.concept_id == 140168
         assert expression.items[0].include_descendants is True
+
+    def test_concept_set_expression_from_json_defaults_missing_item_flags(self):
+        """Test missing item flags default to False."""
+        json_str = """
+        {
+            "items": [
+                {
+                    "concept": {
+                        "CONCEPT_ID": 140168,
+                        "CONCEPT_NAME": "Psoriasis",
+                        "DOMAIN_ID": "Condition",
+                        "VOCABULARY_ID": "SNOMED"
+                    }
+                }
+            ]
+        }
+        """
+
+        expression = ConceptSetExpression.from_json(json_str)
+
+        assert len(expression.items) == 1
+        assert expression.items[0].is_excluded is False
+        assert expression.items[0].include_descendants is False
+        assert expression.items[0].include_mapped is False
+
+    def test_concept_set_expression_validation_errors_use_one_based_item_indexes(self):
+        """Test validation error item indexes are displayed starting from 1."""
+        with pytest.raises(ValidationError) as error:
+            ConceptSetExpression(items=[{}])
+
+        assert error.value.errors()[0]["loc"] == ("items", 1, "concept")
+        assert "items.1.concept" in str(error.value)
+
+    def test_concept_set_expression_from_json_errors_use_one_based_item_indexes(self):
+        """Test JSON validation error item indexes are displayed starting from 1."""
+        json_str = """
+        {
+            "items": [
+                {
+                    "concept": {
+                        "CONCEPT_ID": 140168
+                    }
+                },
+                {}
+            ]
+        }
+        """
+
+        with pytest.raises(ValidationError) as error:
+            ConceptSetExpression.from_json(json_str)
+
+        assert error.value.errors()[0]["loc"] == ("items", 2, "concept")
+        assert "items.2.concept" in str(error.value)
 
     def test_concept_set_expression_equality(self):
         """Test ConceptSetExpression equality."""

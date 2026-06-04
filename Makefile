@@ -13,11 +13,14 @@ install: ## Install the package
 install-dev: ## Install the package with dev dependencies
 	pip install -e ".[dev]"
 
-dev-env: ## Create development environment
+dev-env: ## Create development environment and install dependencies
 	@echo "Creating development environment..."
 	python3 -m venv venv
-	@echo "Virtual environment created. Activate it with: source venv/bin/activate"
-	@echo "Then run: make install-dev"
+	@echo "Installing dependencies..."
+	./venv/bin/pip install --upgrade pip
+	./venv/bin/pip install -e ".[dev]"
+	@echo "Virtual environment created and dependencies installed!"
+	@echo "Activate it with: source venv/bin/activate"
 
 test: ## Run tests
 	pytest tests/ -v
@@ -69,7 +72,9 @@ release: ## Create a release (update version in pyproject.toml first)
 	git add pyproject.toml setup.py; \
 	git commit -m "Bump version to $$new_version" || true; \
 	git tag -a "v$$new_version" -m "Release v$$new_version"; \
-	echo "Release v$$new_version created. Push with: git push && git push --tags"
+	echo "Pushing changes and tags to GitHub..."; \
+	git push && git push --tags; \
+	echo "Release v$$new_version created and pushed to GitHub!"
 
 release-check: ## Check if ready for release
 	@echo "Checking release readiness..."
